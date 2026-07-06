@@ -56,6 +56,13 @@ async function loadSelection() {
   }
 }
 
+noteInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+    event.preventDefault();
+    writeBtn.click();
+  }
+});
+
 lengthControl.addEventListener("click", (event) => {
   const button = event.target.closest(".length-option");
   if (!button) return;
