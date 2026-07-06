@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Voice Reply",
+  "version": "1.0.0",
+  "description": "Highlight text anywhere, describe how you want to respond, and get an AI-generated reply in your own writing voice.",
+  "permissions": ["activeTab", "scripting", "storage", "clipboardWrite", "contextMenus"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup/popup.html"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Open Voice Reply"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content_script.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

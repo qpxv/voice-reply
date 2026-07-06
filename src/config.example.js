@@ -1,0 +1,1 @@
+export const ANTHROPIC_API_KEY = "sk-ant-your-key-here";

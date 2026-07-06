@@ -1,0 +1,12 @@
+{
+  "name": "voice-reply",
+  "version": "1.0.0",
+  "description": "Chrome extension that generates replies in your own writing voice using the Claude API.",
+  "private": true,
+  "scripts": {
+    "build:config": "node build-config.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  }
+}
