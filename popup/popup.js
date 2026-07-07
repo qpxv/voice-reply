@@ -12,6 +12,15 @@ const statusMessage = document.getElementById("status-message");
 let highlightedText = "";
 let lengthPreference = "short";
 
+const LENGTH_CYCLE = ["short", "medium", "long"];
+
+function setLengthPreference(value) {
+  lengthPreference = value;
+  for (const option of lengthControl.querySelectorAll(".length-option")) {
+    option.setAttribute("aria-checked", String(option.dataset.value === value));
+  }
+}
+
 function showError(message) {
   errorMessage.textContent = message;
   errorMessage.hidden = false;
@@ -66,10 +75,18 @@ noteInput.addEventListener("keydown", (event) => {
 lengthControl.addEventListener("click", (event) => {
   const button = event.target.closest(".length-option");
   if (!button) return;
-  lengthPreference = button.dataset.value;
-  for (const option of lengthControl.querySelectorAll(".length-option")) {
-    option.setAttribute("aria-checked", String(option === button));
+  setLengthPreference(button.dataset.value);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Tab" || event.metaKey || event.ctrlKey || event.altKey) {
+    return;
   }
+  event.preventDefault();
+  const step = event.shiftKey ? -1 : 1;
+  const currentIndex = LENGTH_CYCLE.indexOf(lengthPreference);
+  const nextIndex = (currentIndex + step + LENGTH_CYCLE.length) % LENGTH_CYCLE.length;
+  setLengthPreference(LENGTH_CYCLE[nextIndex]);
 });
 
 writeBtn.addEventListener("click", async () => {
