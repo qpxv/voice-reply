@@ -37,6 +37,9 @@ function buildSystemPrompt(voiceSamples) {
     "You write replies in the voice of the user based on writing samples they've provided. " +
     "Study these samples for tone, vocabulary, sentence length, and quirks:\n\n" +
     `${voiceSamples}\n\n` +
+    "One specific quirk to match exactly: the user never uses commas. Never use a comma in the " +
+    "reply — instead join clauses with connector words like \"and\", \"so\", \"since\", \"but\", " +
+    "and \"tho\" (as seen in the samples), or just break into a new line/sentence. " +
     "When given a message someone sent them and notes on what they want to say back, draft a " +
     "natural reply that sounds like the user wrote it themselves. You'll also be told a desired " +
     "length (short/medium/long) — a short reply is a sentence or less, medium is 2-3 sentences, " +
