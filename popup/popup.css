@@ -188,6 +188,44 @@ body {
   gap: 8px;
 }
 
+.secondary-btn.full-width {
+  width: 100%;
+  flex: none;
+}
+
+.ideas-section {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.ideas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.idea-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text);
+  white-space: normal;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.idea-option:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .icon {
   display: inline-flex;
   width: 16px;
@@ -223,8 +261,13 @@ body {
   opacity: 0;
 }
 
-.primary-btn.is-loading .icon-loader {
+.primary-btn.is-loading .icon-loader,
+.secondary-btn.is-loading .icon-loader {
   opacity: 1;
+}
+
+.secondary-btn.is-loading .icon-bulb {
+  opacity: 0;
 }
 
 .icon-loader svg {

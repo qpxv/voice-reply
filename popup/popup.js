@@ -1,6 +1,10 @@
 const selectionBox = document.getElementById("selection-box");
 const noteInput = document.getElementById("note-input");
 const lengthControl = document.getElementById("length-control");
+const ideasBtn = document.getElementById("ideas-btn");
+const ideasBtnLabel = document.getElementById("ideas-btn-label");
+const ideasSection = document.getElementById("ideas-section");
+const ideasList = document.getElementById("ideas-list");
 const writeBtn = document.getElementById("write-btn");
 const writeBtnLabel = document.getElementById("write-btn-label");
 const errorMessage = document.getElementById("error-message");
@@ -45,6 +49,14 @@ function setLoading(isLoading) {
   writeBtn.disabled = isLoading;
   writeBtn.classList.toggle("is-loading", isLoading);
   writeBtnLabel.textContent = isLoading ? "Writing..." : "Write";
+  ideasBtn.disabled = isLoading;
+}
+
+function setIdeasLoading(isLoading) {
+  ideasBtn.disabled = isLoading;
+  ideasBtn.classList.toggle("is-loading", isLoading);
+  ideasBtnLabel.textContent = isLoading ? "Generating..." : "Ideas";
+  writeBtn.disabled = isLoading;
 }
 
 async function loadSelection() {
@@ -87,6 +99,56 @@ document.addEventListener("keydown", (event) => {
   const currentIndex = LENGTH_CYCLE.indexOf(lengthPreference);
   const nextIndex = (currentIndex + step + LENGTH_CYCLE.length) % LENGTH_CYCLE.length;
   setLengthPreference(LENGTH_CYCLE[nextIndex]);
+});
+
+function renderIdeas(ideas) {
+  ideasList.innerHTML = "";
+  for (const idea of ideas) {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = "idea-option";
+    option.textContent = idea;
+    option.addEventListener("click", () => {
+      noteInput.value = idea;
+      ideasSection.hidden = true;
+      noteInput.focus();
+    });
+    ideasList.appendChild(option);
+  }
+  ideasSection.hidden = false;
+}
+
+ideasBtn.addEventListener("click", async () => {
+  clearError();
+
+  if (!highlightedText) {
+    showError("Highlight some text on the page first.");
+    return;
+  }
+
+  setIdeasLoading(true);
+  ideasSection.hidden = true;
+
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: "GENERATE_IDEAS",
+      payload: { highlightedText, userNote: noteInput.value.trim() },
+    });
+
+    if (!response || response.type === "GENERATE_IDEAS_ERROR") {
+      showError(
+        response?.error ||
+          "Something went wrong generating ideas. Check your .env and re-run `npm run build:config`."
+      );
+      return;
+    }
+
+    renderIdeas(response.ideas);
+  } catch (err) {
+    showError("Couldn't reach the extension background service. Try reloading the extension.");
+  } finally {
+    setIdeasLoading(false);
+  }
 });
 
 writeBtn.addEventListener("click", async () => {

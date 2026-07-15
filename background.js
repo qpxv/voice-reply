@@ -32,6 +32,8 @@ const MAX_TOKENS_BY_LENGTH = {
   long: 700,
 };
 
+const IDEAS_MAX_TOKENS = 300;
+
 function buildSystemPrompt(voiceSamples) {
   return (
     "You write replies in the voice of the user based on writing samples they've provided. " +
@@ -115,6 +117,88 @@ async function generateReply({ highlightedText, userNote, lengthPreference }) {
   return text;
 }
 
+function buildIdeasSystemPrompt() {
+  return (
+    "You brainstorm quick reply angles for the user. Given a message someone sent them, " +
+    "and optionally a rough note on how they're currently leaning, come up with exactly 3 " +
+    "different short angles or approaches for how they could reply. Phrase each one like a " +
+    "quick note-to-self on the approach to take, not a fully drafted reply — the same style " +
+    "as notes like \"say no but nicely\" or \"agree and add my own experience\". The 3 angles " +
+    "must be genuinely distinct from each other, not just reworded versions of the same idea. " +
+    "Output exactly 3 lines, one angle per line, nothing else — no numbering, no bullets, no " +
+    "quotation marks, no preamble."
+  );
+}
+
+async function generateIdeas({ highlightedText, userNote }) {
+  const trimmedNote = (userNote || "").trim();
+
+  const response = await fetch(ANTHROPIC_API_URL, {
+    method: "POST",
+    headers: {
+      "x-api-key": ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: IDEAS_MAX_TOKENS,
+      system: buildIdeasSystemPrompt(),
+      messages: [
+        {
+          role: "user",
+          content:
+            `Here is the message I'm replying to:\n"""${highlightedText}"""\n\n` +
+            (trimmedNote
+              ? "Here's a rough note on how I'm currently leaning (use it as context, but " +
+                `still give 3 distinct angles):\n${trimmedNote}\n\n`
+              : "") +
+            "Give me 3 different short angles for how I could reply.",
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const errBody = await response.json();
+      detail = errBody?.error?.message || "";
+    } catch (err) {
+      // Response body wasn't JSON — ignore, fall back to status text below.
+    }
+
+    if (response.status === 401) {
+      throw new Error(
+        "Invalid API key. Check your .env file and re-run `npm run build:config`."
+      );
+    }
+    if (response.status === 429) {
+      throw new Error("Rate limited by the Anthropic API. Wait a moment and try again.");
+    }
+    throw new Error(detail || `Claude API request failed (${response.status}).`);
+  }
+
+  const data = await response.json();
+  const text = (data.content || [])
+    .filter((block) => block.type === "text")
+    .map((block) => block.text)
+    .join("")
+    .trim();
+
+  const ideas = text
+    .split("\n")
+    .map((line) => line.replace(/^[-*•\d.)\s]+/, "").trim())
+    .filter((line) => line.length > 0);
+
+  if (ideas.length === 0) {
+    throw new Error("Claude API returned an empty response.");
+  }
+
+  return ideas;
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message && message.type === "GENERATE_REPLY") {
     generateReply(message.payload)
@@ -123,6 +207,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({
           type: "GENERATE_REPLY_ERROR",
           error: err && err.message ? err.message : "Unknown error generating reply.",
+        })
+      );
+    return true; // keep the message channel open for the async response
+  }
+  if (message && message.type === "GENERATE_IDEAS") {
+    generateIdeas(message.payload)
+      .then((ideas) => sendResponse({ type: "GENERATE_IDEAS_SUCCESS", ideas }))
+      .catch((err) =>
+        sendResponse({
+          type: "GENERATE_IDEAS_ERROR",
+          error: err && err.message ? err.message : "Unknown error generating ideas.",
         })
       );
     return true; // keep the message channel open for the async response
